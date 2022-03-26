@@ -21,8 +21,8 @@ val roleMemberCount = mapOf(
     CreepRole.HARVESTER to 2,
     CreepRole.TRANSPORTER to 2,
     CreepRole.MAINTAINER to 1,
-    CreepRole.UPGRADER to 4,
-    CreepRole.BUILDER to 1
+    CreepRole.UPGRADER to 8,
+    CreepRole.BUILDER to 2
 )
 
 fun runRoom(room: Room, creepsByRoleAndRoom: Map<CreepRole, Map<Room, List<Creep>>>) {
@@ -65,7 +65,12 @@ fun runRoom(room: Room, creepsByRoleAndRoom: Map<CreepRole, Map<Room, List<Creep
         val creepRole = record.key
         val creeps = record.value
         val creepCount = creeps.size
-        val maxCreepsInRole = roleMemberCount[creepRole] ?: 0
+        var maxCreepsInRole = roleMemberCount[creepRole] ?: 0
+        // If room is still missing initial extensions, limit max creeps per role
+        if (room.energyCapacityAvailable < 550 && maxCreepsInRole > 2) {
+            maxCreepsInRole = minOf(maxCreepsInRole, 2)
+            console.log("${room} still getting online, spawning max of ${maxCreepsInRole} ${creepRole.name}s")
+        }
         console.log("${room} ${creepRole}: ${creepCount}/${maxCreepsInRole}")
         // Spawn more creeps if we are not at the desired volume
         if (creepCount < maxCreepsInRole && !prioritySpawnActive) {
