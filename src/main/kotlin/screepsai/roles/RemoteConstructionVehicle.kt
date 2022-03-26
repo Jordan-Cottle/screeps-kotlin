@@ -60,7 +60,12 @@ class RemoteConstructionVehicle(creep: Creep) : Role(creep) {
         val code = creep.harvest(energySource)
 
         if (code == ERR_NOT_IN_RANGE) {
-            creep.moveTo(energySource)
+            if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 50) {
+                state = CreepState.DO_WORK
+            }
+            else {
+                creep.moveTo(energySource)
+            }
         }
         else if (code != OK) {
             error("Gather failed with code ${code}")
@@ -105,7 +110,7 @@ class RemoteConstructionVehicle(creep: Creep) : Role(creep) {
     }
 
     private fun findConstructionSite(): ConstructionSite? {
-        return if (targetFlag != null) {
+        return if (targetFlag != null && creep.room != targetFlag.room) {
             targetFlag.room?.find(FIND_CONSTRUCTION_SITES)?.firstOrNull()
         }
         else {
@@ -126,6 +131,11 @@ class RemoteConstructionVehicle(creep: Creep) : Role(creep) {
             info("Out of energy", say = true)
             state = CreepState.GET_ENERGY
             return
+        }
+        else if (code == ERR_FULL) {
+            info("Spawner full of energy, dropping energy for other creeps to use")
+            creep.drop(RESOURCE_ENERGY)
+            state = CreepState.GET_ENERGY
         }
         else if (code != OK) {
             error("Transfer failed with code ${code}", say = true)
